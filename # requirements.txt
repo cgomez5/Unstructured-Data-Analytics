@@ -1,0 +1,6 @@
+# requirements.txt
+
+streamlit
+pandas
+nest_asynciogit pull --rebase origin main
+git push origin main
