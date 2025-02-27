@@ -1,5 +1,3 @@
-# Project_FinalGomez.py
-
 import asyncio
 import nest_asyncio
 import smtplib
@@ -10,18 +8,13 @@ from playwright.async_api import async_playwright
 from datetime import datetime
 import pytz
 
-RECIPIENT_EMAIL = "cgomez5@nd.edu"
+nest_asyncio.apply()
 
-
-
-# Email Configuration
+# SMTP Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SENDER_EMAIL = "gomezchristian925@gmail.com"
-SENDER_PASSWORD = "slihulrequvfqbel"  # Replace with your actual App Password
 
-
-def send_email_with_html(html_content):
+def send_email_with_html(sender_email, sender_password, recipient_email, html_content):
     st.write("📧 Email function was triggered!")
     print("📧 Email function was triggered!")
 
@@ -30,8 +23,8 @@ def send_email_with_html(html_content):
 
     msg = EmailMessage()
     msg["Subject"] = f"World Indices Report - {display_timestamp} (Eastern)"
-    msg["From"] = SENDER_EMAIL
-    msg["To"] = RECIPIENT_EMAIL
+    msg["From"] = sender_email
+    msg["To"] = recipient_email
     msg.set_content("This is an automated world indices report. See below for details.")
     msg.add_alternative(html_content, subtype="html")
 
@@ -46,7 +39,7 @@ def send_email_with_html(html_content):
 
             st.write("🔑 Logging into email...")
             print("🔑 Logging into email...")
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.login(sender_email, sender_password)
 
             st.write("📩 Sending email now...")
             print("📩 Sending email now...")
@@ -59,9 +52,7 @@ def send_email_with_html(html_content):
         st.error(f"❌ Failed to send email: {e}")
         print(f"❌ Email Error: {e}")
 
-nest_asyncio.apply()
-
-# Scrape the Yahoo website
+# Asynchronous function to scrape Yahoo Finance for world indices
 async def scrape_yahoo_world_indices():
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True)
@@ -81,29 +72,36 @@ async def scrape_yahoo_world_indices():
             row = rows.nth(i)
             cells = row.locator("td")
             cell_count = await cells.count()
-            row_data = [ (await cells.nth(j).inner_text()).strip() for j in range(cell_count) ]
+            row_data = [(await cells.nth(j).inner_text()).strip() for j in range(cell_count)]
             data.append(row_data)
 
         await browser.close()
     return data
 
-# Generate Yahoo Finance links
+# Helper function to generate a Yahoo Finance link for a given symbol
 def generate_yahoo_link(symbol: str) -> str:
     encoded_symbol = symbol.replace('^', '%5E')
     return f"https://finance.yahoo.com/quote/{encoded_symbol}/"
 
-# Streamlit UI
+# ------------------ Streamlit App ------------------
+
 st.title("World Indices Report")
 st.write("This app scrapes Yahoo Finance to get world indices and displays key data.")
 
-# Scrape Data Button
+# --- Prompt the user for email credentials ---
+st.subheader("Email Configuration")
+sender_email = st.text_input("Enter the **sender** email address:", "")
+sender_password = st.text_input("Enter the **sender** email password:", type="password")
+recipient_email = st.text_input("Enter the **recipient** email address:", "")
+
+# --- Button to scrape data ---
 if st.button("Scrape Data", key="scrape_data"):
     st.write("Fetching data... please wait.")
 
     # Run the scraper
     raw_data = asyncio.run(scrape_yahoo_world_indices())
 
-    # Convert to DataFrame
+    # Convert the scraped data into a DataFrame
     columns = ["Symbol", "Name", "Unused", "Price", "Change", "Change %", "Volume", "Day Range", "52 Wk Range"]
     df_all = pd.DataFrame(raw_data, columns=columns)
     df_all = df_all.drop(columns=["Unused", "Day Range", "52 Wk Range", "Volume"], errors="ignore")
@@ -156,22 +154,30 @@ if st.button("Scrape Data", key="scrape_data"):
     </html>
     """
 
-    # Display data in Streamlit
+    # Display the data in Streamlit
     st.subheader("USA Major Indices")
     st.dataframe(df_tickers)
 
     st.subheader("Indices on the Move")
     st.dataframe(df_change)
 
-    # Store the HTML output in session state for later use
+    # Store the HTML output in session state for later use (email)
     st.session_state["html_output"] = html_output
     st.success("Report generated successfully!")
 
-# Send Email Button
+# --- Button to send email ---
 if st.button("Send Email Report", key="send_email_btn"):
     if "html_output" in st.session_state:
-        st.write("🟢 Button Clicked - Calling Email Function")
-        print("🟢 Button Clicked - Calling Email Function")
-        send_email_with_html(st.session_state["html_output"])
+        if not sender_email or not sender_password or not recipient_email:
+            st.error("Please fill in the sender email, password, and recipient email before sending.")
+        else:
+            st.write("🟢 Button Clicked - Calling Email Function")
+            print("🟢 Button Clicked - Calling Email Function")
+            send_email_with_html(
+                sender_email,
+                sender_password,
+                recipient_email,
+                st.session_state["html_output"]
+            )
     else:
         st.error("No report generated yet. Please scrape data first.")
