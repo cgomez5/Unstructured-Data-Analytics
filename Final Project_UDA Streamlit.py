@@ -14,7 +14,7 @@ import pytz
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SENDER_EMAIL = "gomezchristian925@gmail.com"
-SENDER_PASSWORD = "nuueyjjdbmzxnlws"  # Use environment variables instead
+SENDER_PASSWORD = "gwadmsxxfgusurru"  # Use environment variables instead
 RECIPIENT_EMAIL = ["cgomez5@nd.edu"]
 
 nest_asyncio.apply()
