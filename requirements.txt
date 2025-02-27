@@ -3,3 +3,4 @@
 streamlit
 pandas
 nest-asyncio
+playwright
