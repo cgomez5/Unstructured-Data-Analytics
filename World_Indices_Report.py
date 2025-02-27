@@ -8,7 +8,7 @@ from playwright.async_api import async_playwright
 from datetime import datetime
 import pytz
 
-nest_asyncio.apply()
+nest-asyncio.apply()
 
 # SMTP Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
