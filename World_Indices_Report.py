@@ -1,5 +1,5 @@
 import asyncio
-import nest-asyncio
+import nest_asyncio
 import smtplib
 import pandas as pd
 import streamlit as st
@@ -8,7 +8,7 @@ from playwright.async_api import async_playwright
 from datetime import datetime
 import pytz
 
-nest-asyncio.apply()
+nest_asyncio.apply()
 
 # SMTP Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
