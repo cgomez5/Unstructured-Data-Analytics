@@ -4,12 +4,10 @@ import streamlit as st
 from email.message import EmailMessage
 from datetime import datetime
 import pytz
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
 import time
+import os
+import undetected_chromedriver as uc
+from selenium.webdriver.common.by import By
 
 # SMTP Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
@@ -53,32 +51,23 @@ def send_email_with_html(sender_email, sender_password, recipient_email, html_co
         st.error(f"❌ Failed to send email: {e}")
         print(f"❌ Email Error: {e}")
 
-import os
-import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
-
+# Scraper function using undetected-chromedriver (synchronous)
 def scrape_yahoo_world_indices():
-    options = Options()
-    options.add_argument("--headless")
+    options = uc.ChromeOptions()
+    options.headless = True
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    # Set the binary location if available (Streamlit Cloud typically sets GOOGLE_CHROME_BIN)
+    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN", "/usr/bin/chromium-browser")
     
-    # Set the binary location:
-    chrome_bin = os.environ.get("GOOGLE_CHROME_BIN", "/usr/bin/chromium-browser")
-    options.binary_location = chrome_bin
-
-    # Use WebDriver Manager to install ChromeDriver automatically
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
+    # Initialize undetected-chromedriver
+    driver = uc.Chrome(options=options)
 
     try:
         driver.get("https://finance.yahoo.com/markets/world-indices")
-        time.sleep(3)  # Wait for page to load
+        time.sleep(3)  # Wait for the page to load
 
+        # Locate the table container
         table = driver.find_element(By.CSS_SELECTOR, "table[data-testid='table-container']")
         rows = table.find_elements(By.TAG_NAME, "tr")
 
@@ -88,8 +77,10 @@ def scrape_yahoo_world_indices():
             row_data = [cell.text.strip() for cell in cells]
             if row_data:
                 data.append(row_data)
+
     except Exception as e:
-        print(f"Scraping error: {e}")
+        st.error(f"❌ Scraping error: {e}")
+        print(f"❌ Scraping error: {e}")
         data = []
     finally:
         driver.quit()
