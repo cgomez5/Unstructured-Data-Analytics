@@ -1,6 +1,7 @@
 # requirements.txt
-
 streamlit
 pandas
 numpy
-pyppeteer
+selenium
+webdriver-manager
+pytz
