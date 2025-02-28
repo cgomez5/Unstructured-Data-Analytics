@@ -8,6 +8,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 import time
 
 # SMTP Email Configuration
@@ -59,7 +60,8 @@ def scrape_yahoo_world_indices():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
-    service = Service()  # ChromeDriver auto-management
+    # Use WebDriver Manager to install ChromeDriver automatically
+    service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
 
     try:
@@ -77,7 +79,8 @@ def scrape_yahoo_world_indices():
                 data.append(row_data)
 
     except Exception as e:
-        print(f"Scraping error: {e}")
+        st.error(f"❌ Scraping error: {e}")
+        print(f"❌ Scraping error: {e}")
         data = []
     
     finally:
