@@ -6,7 +6,6 @@ from pyppeteer import launch
 from datetime import datetime
 import pytz
 
-nest_asyncio.apply()
 
 # SMTP Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
