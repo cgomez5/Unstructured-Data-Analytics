@@ -9,6 +9,9 @@ from datetime import datetime
 import pytz
 import os
 os.system("playwright install")
+import os
+from playwright.async_api import async_playwright
+
 
 
 nest_asyncio.apply()
@@ -55,11 +58,17 @@ def send_email_with_html(sender_email, sender_password, recipient_email, html_co
         st.error(f"❌ Failed to send email: {e}")
         print(f"❌ Email Error: {e}")
 
-# Asynchronous function to scrape Yahoo Finance for world indices
+
+# Ensure Playwright dependencies are installed
+os.system("playwright install --with-deps")
+
 async def scrape_yahoo_world_indices():
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True)
         page = await browser.new_page()
+        await page.goto("https://finance.yahoo.com/markets/world-indices")
+        # Add more scraping logic here...
+        await browser.close()
 
         await page.goto("https://finance.yahoo.com/markets/world-indices/")
         await page.wait_for_load_state("domcontentloaded", timeout=60000)
