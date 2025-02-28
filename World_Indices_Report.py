@@ -4,15 +4,9 @@ import smtplib
 import pandas as pd
 import streamlit as st
 from email.message import EmailMessage
-from playwright.async_api import async_playwright
+from pyppeteer import launch
 from datetime import datetime
 import pytz
-import os
-os.system("playwright install")
-import os
-from playwright.async_api import async_playwright
-
-
 
 nest_asyncio.apply()
 
@@ -58,42 +52,32 @@ def send_email_with_html(sender_email, sender_password, recipient_email, html_co
         st.error(f"❌ Failed to send email: {e}")
         print(f"❌ Email Error: {e}")
 
-
-# Ensure Playwright dependencies are installed at runtime
-os.system("playwright install --with-deps")
-
+# Scraper function using Pyppeteer
 async def scrape_yahoo_world_indices():
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch(
-            headless=True,
-            args=["--no-sandbox", "--disable-setuid-sandbox"]
-        )
-        page = await browser.new_page()
-        await page.goto("https://finance.yahoo.com/markets/world-indices")
-        # Your scraping logic here...
-        await browser.close()
+    browser = await launch(headless=True, args=["--no-sandbox"])
+    page = await browser.newPage()
+    await page.goto("https://finance.yahoo.com/markets/world-indices")
+    await page.waitForSelector("table[data-testid='table-container']")
+    await asyncio.sleep(3)
 
-        await page.goto("https://finance.yahoo.com/markets/world-indices/")
-        await page.wait_for_load_state("domcontentloaded", timeout=60000)
-        await asyncio.sleep(3)
+    # Extract table rows
+    rows = await page.evaluate('''
+        () => {
+            const data = [];
+            const rows = document.querySelectorAll("table[data-testid='table-container'] tbody tr");
+            rows.forEach(row => {
+                const cells = row.querySelectorAll("td");
+                const rowData = Array.from(cells).map(cell => cell.innerText.trim());
+                data.push(rowData);
+            });
+            return data;
+        }
+    ''')
 
-        table = page.locator("div.tableContainer.yf-j24h8w table[data-testid='table-container']")
-        await table.wait_for(state="visible", timeout=30000)
-        rows = table.locator("tbody tr")
-        row_count = await rows.count()
+    await browser.close()
+    return rows
 
-        data = []
-        for i in range(row_count):
-            row = rows.nth(i)
-            cells = row.locator("td")
-            cell_count = await cells.count()
-            row_data = [(await cells.nth(j).inner_text()).strip() for j in range(cell_count)]
-            data.append(row_data)
-
-        await browser.close()
-    return data
-
-# Helper function to generate a Yahoo Finance link for a given symbol
+# Generate Yahoo Finance link for a given symbol
 def generate_yahoo_link(symbol: str) -> str:
     encoded_symbol = symbol.replace('^', '%5E')
     return f"https://finance.yahoo.com/quote/{encoded_symbol}/"
