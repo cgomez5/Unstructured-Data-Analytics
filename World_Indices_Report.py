@@ -53,12 +53,23 @@ def send_email_with_html(sender_email, sender_password, recipient_email, html_co
         st.error(f"❌ Failed to send email: {e}")
         print(f"❌ Email Error: {e}")
 
-# Scraper function using Selenium
+import os
+import time
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+
 def scrape_yahoo_world_indices():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    
+    # Set the binary location:
+    chrome_bin = os.environ.get("GOOGLE_CHROME_BIN", "/usr/bin/chromium-browser")
+    options.binary_location = chrome_bin
 
     # Use WebDriver Manager to install ChromeDriver automatically
     service = Service(ChromeDriverManager().install())
@@ -77,12 +88,9 @@ def scrape_yahoo_world_indices():
             row_data = [cell.text.strip() for cell in cells]
             if row_data:
                 data.append(row_data)
-
     except Exception as e:
-        st.error(f"❌ Scraping error: {e}")
-        print(f"❌ Scraping error: {e}")
+        print(f"Scraping error: {e}")
         data = []
-    
     finally:
         driver.quit()
 
