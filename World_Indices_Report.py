@@ -2,10 +2,13 @@ import smtplib
 import pandas as pd
 import streamlit as st
 from email.message import EmailMessage
-from pyppeteer import launch
 from datetime import datetime
 import pytz
-
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+import time
 
 # SMTP Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
@@ -49,30 +52,38 @@ def send_email_with_html(sender_email, sender_password, recipient_email, html_co
         st.error(f"❌ Failed to send email: {e}")
         print(f"❌ Email Error: {e}")
 
-# Scraper function using Pyppeteer
-async def scrape_yahoo_world_indices():
-    browser = await launch(headless=True, args=["--no-sandbox"])
-    page = await browser.newPage()
-    await page.goto("https://finance.yahoo.com/markets/world-indices")
-    await page.waitForSelector("table[data-testid='table-container']")
-    await asyncio.sleep(3)
+# Scraper function using Selenium
+def scrape_yahoo_world_indices():
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
 
-    # Extract table rows
-    rows = await page.evaluate('''
-        () => {
-            const data = [];
-            const rows = document.querySelectorAll("table[data-testid='table-container'] tbody tr");
-            rows.forEach(row => {
-                const cells = row.querySelectorAll("td");
-                const rowData = Array.from(cells).map(cell => cell.innerText.trim());
-                data.push(rowData);
-            });
-            return data;
-        }
-    ''')
+    service = Service()  # ChromeDriver auto-management
+    driver = webdriver.Chrome(service=service, options=options)
 
-    await browser.close()
-    return rows
+    try:
+        driver.get("https://finance.yahoo.com/markets/world-indices")
+        time.sleep(3)  # Wait for page to load
+
+        table = driver.find_element(By.CSS_SELECTOR, "table[data-testid='table-container']")
+        rows = table.find_elements(By.TAG_NAME, "tr")
+
+        data = []
+        for row in rows:
+            cells = row.find_elements(By.TAG_NAME, "td")
+            row_data = [cell.text.strip() for cell in cells]
+            if row_data:
+                data.append(row_data)
+
+    except Exception as e:
+        print(f"Scraping error: {e}")
+        data = []
+    
+    finally:
+        driver.quit()
+
+    return data
 
 # Generate Yahoo Finance link for a given symbol
 def generate_yahoo_link(symbol: str) -> str:
@@ -95,7 +106,7 @@ if st.button("Scrape Data", key="scrape_data"):
     st.write("Fetching data... please wait.")
 
     # Run the scraper
-    raw_data = asyncio.run(scrape_yahoo_world_indices())
+    raw_data = scrape_yahoo_world_indices()
 
     # Convert the scraped data into a DataFrame
     columns = ["Symbol", "Name", "Unused", "Price", "Change", "Change %", "Volume", "Day Range", "52 Wk Range"]
