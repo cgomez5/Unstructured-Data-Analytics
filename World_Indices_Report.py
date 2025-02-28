@@ -7,6 +7,9 @@ from email.message import EmailMessage
 from playwright.async_api import async_playwright
 from datetime import datetime
 import pytz
+import os
+os.system("playwright install")
+
 
 nest_asyncio.apply()
 
