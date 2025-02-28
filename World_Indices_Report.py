@@ -59,15 +59,18 @@ def send_email_with_html(sender_email, sender_password, recipient_email, html_co
         print(f"❌ Email Error: {e}")
 
 
-# Ensure Playwright dependencies are installed
+# Ensure Playwright dependencies are installed at runtime
 os.system("playwright install --with-deps")
 
 async def scrape_yahoo_world_indices():
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=True)
+        browser = await pw.chromium.launch(
+            headless=True,
+            args=["--no-sandbox", "--disable-setuid-sandbox"]
+        )
         page = await browser.new_page()
         await page.goto("https://finance.yahoo.com/markets/world-indices")
-        # Add more scraping logic here...
+        # Your scraping logic here...
         await browser.close()
 
         await page.goto("https://finance.yahoo.com/markets/world-indices/")
