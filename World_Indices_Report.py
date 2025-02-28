@@ -1,5 +1,3 @@
-import asyncio
-import nest_asyncio
 import smtplib
 import pandas as pd
 import streamlit as st
